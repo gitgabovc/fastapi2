@@ -34,7 +34,7 @@ def read_root():
 
 @app.get("/playtimegenre/{genre}")
 def get_max_playtime(genre: str):
-    tabla_pivot_steam_user_items = pd.read_parquet("Dataset/tabla_pivot_steam_user_items.parquet")
+    tabla_pivot_steam_user_items = pd.read_parquet("tabla_pivot_steam_user_items.parquet")
     # Filtra la columna del género específico
     genre_column = tabla_pivot_steam_user_items[genre]
 
