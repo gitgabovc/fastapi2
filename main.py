@@ -81,13 +81,13 @@ def get_max_playtime(genre: str):
 def read_user_for_genre(genre: str):
     # Leer las tablas pivote desde archivos Parquet
     df_genero_user_id = pd.read_parquet("genero_user_id.parquet")
-    df_user_id_release_date = pd.read_csv("user_id_release_date.csv")
+    df_user_id_release_date = pd.read_csv("user_id_release_date.csv", index_col='user_id')
     
     # Encontrar el índice del usuario con más horas jugadas para el género específico
     usuario_max_horas_id = df_genero_user_id[genre].idxmax()
 
     # Filtrar el DataFrame original para obtener solo las filas correspondientes al usuario con más horas jugadas
-    df_usuario_max_horas = df_user_id_release_date.loc[usuario_max_horas_id]
+    df_usuario_max_horas = df_user_id_release_date[usuario_max_horas_id]
 
     # Filtrar solo los release_date con horas jugadas mayores que cero
     horas_por_release_date = df_usuario_max_horas[df_usuario_max_horas > 0].dropna().to_dict()
