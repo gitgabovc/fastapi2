@@ -12,23 +12,36 @@ app = FastAPI()
 def read_root():
     return {"Hello": "World"}
 
+# @app.get("/playtimegenre/{genre}")
+# def read_playtime_genre(genre: str):
+#     df_steam_1 = pd.read_parquet("steam_games_clean.parquet")
+#     df_user_items_1 = pd.read_parquet("user_items_clean.parquet")
+#     df_combinado = pd.merge(df_user_items_1 ,df_steam_1, on='item_id', how='inner')
+#     df_agrupado = (
+#         df_combinado[['release_date', 'playtime_forever', genre]]
+#         .query(f"`{genre}` == 1")
+#         .groupby('release_date')['playtime_forever']
+#         .sum()
+#         .reset_index()
+#     )
+
+#     # Encontrar el año más jugado
+#     anio_mas_jugado = df_agrupado.loc[df_agrupado['playtime_forever'].idxmax()]
+
+#     return {"releasse_date": int(anio_mas_jugado['release_date'])}
+
+# Lee la tabla pivot desde el archivo Parquet
+
 @app.get("/playtimegenre/{genre}")
-def read_playtime_genre(genre: str):
-    df_steam_1 = pd.read_parquet("steam_games_clean.parquet")
-    df_user_items_1 = pd.read_parquet("user_items_clean.parquet")
-    df_combinado = pd.merge(df_user_items_1 ,df_steam_1, on='item_id', how='inner')
-    df_agrupado = (
-        df_combinado[['release_date', 'playtime_forever', genre]]
-        .query(f"`{genre}` == 1")
-        .groupby('release_date')['playtime_forever']
-        .sum()
-        .reset_index()
-    )
+def get_max_playtime(genre: str):
+    tabla_pivot_steam_user_items = pd.read_parquet("Dataset/tabla_pivot_steam_user_items.parquet")
+    # Filtra la columna del género específico
+    genre_column = tabla_pivot_steam_user_items[genre]
 
-    # Encontrar el año más jugado
-    anio_mas_jugado = df_agrupado.loc[df_agrupado['playtime_forever'].idxmax()]
+    # Encuentra el año con el tiempo de juego máximo
+    max_playtime_year = genre_column.idxmax()
 
-    return {"releasse_date": int(anio_mas_jugado['release_date'])}
+    return {"Año de lanzamiento con más horas jugadas para Género "+ genre: int(max_playtime_year)}
 
 
 
