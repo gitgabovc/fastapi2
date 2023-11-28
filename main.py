@@ -45,38 +45,61 @@ def get_max_playtime(genre: str):
 
 
 
+# @app.get('/userforgenre/{genre}')
+# def read_user_for_genre(genre: str):
+#     # Lee los archivos CSV y combina los DataFrames
+#     df_filtrado = (
+#         pd.merge(
+#             pd.read_parquet("user_items_clean.parquet"),
+#             pd.read_parquet("steam_games_clean.parquet"),
+#             on='item_id',
+#             how='inner'
+#         )
+#         .loc[lambda df: df[genre] == 1, ['release_date', 'playtime_forever', 'user_id', genre]]
+#     )
+
+#     # Encontrar el jugador con más horas
+#     jugador_mas_horas_id = df_filtrado.groupby('user_id')['playtime_forever'].sum().idxmax()
+
+#     # Filtrar directamente el DataFrame por el jugador con más horas y calcular las horas por año
+#     df_agrupado_release_anio = (
+#         df_filtrado[df_filtrado['user_id'] == jugador_mas_horas_id]
+#         .groupby('release_date')['playtime_forever']
+#         .sum()
+#         .reset_index()
+#     )
+
+#     # Crear la estructura de respuesta con nombres de columnas modificados
+#     respuesta = {
+#         "Usuario con más horas jugadas para Género " + genre: jugador_mas_horas_id,
+#         "Horas jugadas": df_agrupado_release_anio.rename(columns={"release_date": "Anio", "playtime_forever": "Horas"}).to_dict(orient='records')
+#     }
+
+#     # Devolver la respuesta como JSON
+#     return JSONResponse(content=respuesta)
 @app.get('/userforgenre/{genre}')
 def read_user_for_genre(genre: str):
-    # Lee los archivos CSV y combina los DataFrames
-    df_filtrado = (
-        pd.merge(
-            pd.read_parquet("user_items_clean.parquet"),
-            pd.read_parquet("steam_games_clean.parquet"),
-            on='item_id',
-            how='inner'
-        )
-        .loc[lambda df: df[genre] == 1, ['release_date', 'playtime_forever', 'user_id', genre]]
-    )
+    # Leer las tablas pivote desde archivos Parquet
+    df_genero_user_id = pd.read_parquet("genero_user_id.parquet")
+    df_user_id_release_date = pd.read_csv("user_id_release_date.csv")
+    
+    # Encontrar el índice del usuario con más horas jugadas para el género específico
+    usuario_max_horas_id = df_genero_user_id[genre].idxmax()
 
-    # Encontrar el jugador con más horas
-    jugador_mas_horas_id = df_filtrado.groupby('user_id')['playtime_forever'].sum().idxmax()
+    # Filtrar el DataFrame original para obtener solo las filas correspondientes al usuario con más horas jugadas
+    df_usuario_max_horas = df_user_id_release_date.loc[usuario_max_horas_id]
 
-    # Filtrar directamente el DataFrame por el jugador con más horas y calcular las horas por año
-    df_agrupado_release_anio = (
-        df_filtrado[df_filtrado['user_id'] == jugador_mas_horas_id]
-        .groupby('release_date')['playtime_forever']
-        .sum()
-        .reset_index()
-    )
+    # Filtrar solo los release_date con horas jugadas mayores que cero
+    horas_por_release_date = df_usuario_max_horas[df_usuario_max_horas > 0].dropna().to_dict()
 
-    # Crear la estructura de respuesta con nombres de columnas modificados
+    # Formatear la respuesta
     respuesta = {
-        "Usuario con más horas jugadas para Género " + genre: jugador_mas_horas_id,
-        "Horas jugadas": df_agrupado_release_anio.rename(columns={"release_date": "Anio", "playtime_forever": "Horas"}).to_dict(orient='records')
+        f"Usuario con más horas jugadas para Género "+genre: usuario_max_horas_id,
+        "Horas jugadas": [{"Anio": release_date, "Horas": horas} for release_date, horas in horas_por_release_date.items()]
     }
 
-    # Devolver la respuesta como JSON
     return JSONResponse(content=respuesta)
+
 
 @app.get("/usersrecommend/{anio}")
 def read_users_recommend(anio: int):
